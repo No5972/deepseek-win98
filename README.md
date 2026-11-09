@@ -67,6 +67,12 @@ Windows 98 的问题不在于"老"，而在于 **它压根没有能用的现代 
 +--------------------------------------------------+
 ```
 
+<img width="834" height="613" alt="image" src="https://github.com/user-attachments/assets/87182d29-f75b-408f-9571-69d9913d5d7c" />
+
+<img width="687" height="520" alt="image" src="https://github.com/user-attachments/assets/c4a7e589-2acc-49bc-baa9-1f36605db23d" />
+
+
+
 ## 请求长这样
 
 ```json
