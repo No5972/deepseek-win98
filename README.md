@@ -86,7 +86,7 @@ Windows 98 的问题不在于"老"，而在于 **它压根没有能用的现代 
 }
 ```
 
-响应走 SSE，每行一个 `data:` 分片。本程序只取 `choices[0].delta.content`，`reasoning_content` 全部丢弃——不是不尊重思考过程，是 Win98 的屏幕分辨率不配看那么多字。
+响应走 SSE，每行一个 `data:` 分片。本程序只取 `choices[0].delta.content`，`reasoning_content` 全部丢弃——不是不尊重思考过程，是界面暂时还没来得及设计。
 
 ## 编译
 
@@ -96,13 +96,13 @@ Win98 是纯 32 位系统，所以 `/platform:x86` 不是可选项，是保命�
 
 ```powershell
 & "C:\Windows\Microsoft.NET\Framework\v4.0.30319\csc.exe" /nologo /target:winexe /platform:x86 `
-  /codepage:65001 /optimize+ /out:"DeepSeekChat_x86.exe" `
+  /codepage:65001 /optimize+ /out:"dschat.exe" `
   /reference:System.dll /reference:System.Drawing.dll /reference:System.Windows.Forms.dll `
   /reference:System.Web.Extensions.dll /reference:System.Core.dll `
   "DeepSeekChat.cs"
 ```
 
-编译产物：`DeepSeekChat_x86.exe`（约 14 KB，比一张 GIF 还小）。
+编译产物：`dschat.exe`（约 14 KB，比一张 GIF 还小）。
 
 其中 `/codepage:65001` 是为了让源码里的中文界面文字别变成火星文。
 
@@ -112,7 +112,7 @@ Win98 是纯 32 位系统，所以 `/platform:x86` 不是可选项，是保命�
 2. 安装 [KernelEx 4.5.2+](http://kernelex.sourceforge.net/)
 3. 按 [dotnet48-win98 的说明](https://github.com/11EJDE11/dotnet48-win98#quick-install) 装好 .NET Framework 4.8 运行时，直到记事本里出现 `HELLO48 OK`
 4. 确认 `C:\WINDOWS\SYSTEM\CACERT.PEM` 存在（根证书全靠它），系统时间正确
-5. 把 `DeepSeekChat_x86.exe` 拷过去，双击，填 Key，发送
+5. 把 `dschat.exe` 拷过去，双击，填 Key，发送
 
 如果 HTTPS 报证书错误，设 `TLS98_LOG=1` 再跑一次，日志在 `C:\DOTNET48\TLS98.LOG`——该项目作者早就替你想到了这一天。
 
