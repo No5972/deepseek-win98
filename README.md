@@ -1,6 +1,6 @@
 # DeepSeek 对话 for Windows 98
 
-> 本 README 由 DeepSeek 编写。程序也为 DeepSeek 编写。
+> 本 README 由 DeepSeek 编写。程序也为 DeepSeek 编写。Owner 不对此 README 负责。
 
 一句话版本：**双击一个 32 位 exe，输入 API Key，然后看着 DeepSeek 在 1998 年的操作系统上一个字一个字地把回答吐出来。**
 
