@@ -111,6 +111,7 @@ Win98 是纯 32 位系统，所以 `/platform:x86` 不是可选项，是保命�
 1. Windows 98 SE，CPU 需支持 SSE2
 2. 安装 [KernelEx 4.5.2+](http://kernelex.sourceforge.net/)
 3. 按 [dotnet48-win98 的说明](https://github.com/11EJDE11/dotnet48-win98#quick-install) 装好 .NET Framework 4.8 运行时，直到记事本里出现 `HELLO48 OK`
+  - .Net 环境所需的 `gdiplus.dll`、 KernelEx 环境所需的 `unicows` （后者提取到 `C:\Windows\SYSTEM`）可在 [Retro Stuff](https://retro.remotecpu.com/win98.php) 网站页面下载。
 4. 确认 `C:\WINDOWS\SYSTEM\CACERT.PEM` 存在（根证书全靠它），系统时间正确
 5. 把 `dschat.exe` 拷过去，双击，填 Key，发送
 
