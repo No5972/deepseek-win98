@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Net;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web.Script.Serialization;
@@ -34,10 +35,12 @@ namespace DeepSeekChatApp
         private readonly Button _sendButton;
         private readonly TextBox _replyBox;
         private readonly Label _statusLabel;
+        private readonly TextBox _thinkingBox;
 
         private readonly Timer _thinkingTimer;
         private readonly Timer _typingTimer;
         private readonly StringBuilder _pending = new StringBuilder();
+        private readonly StringBuilder _reasoning = new StringBuilder();
         private readonly JavaScriptSerializer _serializer = new JavaScriptSerializer();
 
         private int _thinkingFrame;
@@ -49,7 +52,7 @@ namespace DeepSeekChatApp
             StartPosition = FormStartPosition.CenterScreen;
             ClientSize = new Size(680, 620);
             MinimumSize = new Size(540, 480);
-            Font = new Font("Microsoft YaHei", 9F);
+            Font = new Font("Simsun", 9F);
 
             var keyLabel = new Label
             {
@@ -81,7 +84,8 @@ namespace DeepSeekChatApp
             {
                 Text = "发送",
                 Location = new Point(12, 160),
-                Size = new Size(90, 32)
+                Size = new Size(90, 32),
+                FlatStyle = FlatStyle.System
             };
             _sendButton.Click += OnSendClick;
 
@@ -90,6 +94,21 @@ namespace DeepSeekChatApp
                 Location = new Point(112, 168),
                 AutoSize = true,
                 ForeColor = Color.DimGray
+            };
+
+            // 单行、右对齐，只露出最新生成的思考内容。
+            _thinkingBox = new TextBox
+            {
+                Location = new Point(190, 163),
+                Width = ClientSize.Width - 202,
+                Height = 23,
+                ReadOnly = true,
+                TabStop = false,
+                BorderStyle = BorderStyle.Fixed3D,
+                TextAlign = HorizontalAlignment.Right,
+                BackColor = SystemColors.Control,
+                Font = new Font("Simsun", 9F),
+                Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right
             };
 
             _replyBox = new TextBox
@@ -101,12 +120,12 @@ namespace DeepSeekChatApp
                 ReadOnly = true,
                 ScrollBars = ScrollBars.Vertical,
                 WordWrap = true,
-                BackColor = Color.White,
-                Font = new Font("Microsoft YaHei", 10F),
+                BackColor = SystemColors.Control,
+                Font = new Font("Simsun", 9F),
                 Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right
             };
 
-            Controls.AddRange(new Control[] { keyLabel, _apiKeyBox, _inputBox, _sendButton, _statusLabel, _replyBox });
+            Controls.AddRange(new Control[] { keyLabel, _apiKeyBox, _inputBox, _sendButton, _statusLabel, _thinkingBox, _replyBox });
 
             _thinkingTimer = new Timer { Interval = 100 };
             _thinkingTimer.Tick += delegate
@@ -148,6 +167,8 @@ namespace DeepSeekChatApp
             _sendButton.Enabled = false;
             _replyBox.Clear();
             _pending.Clear();
+            _reasoning.Clear();
+            _thinkingBox.Clear();
             _thinkingFrame = 0;
             _statusLabel.Text = "思考中 |";
             _thinkingTimer.Start();
@@ -244,7 +265,19 @@ namespace DeepSeekChatApp
                         break;
                     }
 
-                    string content = ExtractDeltaContent(data);
+                    var delta = ExtractDelta(data);
+                    if (delta == null)
+                    {
+                        continue;
+                    }
+
+                    string reasoning = ReadString(delta, "reasoning_content");
+                    if (reasoning.Length > 0)
+                    {
+                        AppendReasoning(reasoning);
+                    }
+
+                    string content = ReadString(delta, "content");
                     if (content.Length > 0)
                     {
                         AppendContent(content);
@@ -253,35 +286,34 @@ namespace DeepSeekChatApp
             }
         }
 
-        // 解析流式分片，只取 delta.content；思考内容（reasoning_content）暂时丢弃。
-        private string ExtractDeltaContent(string json)
+        // 解析流式分片，取出 choices[0].delta。
+        private Dictionary<string, object> ExtractDelta(string json)
         {
             var root = _serializer.DeserializeObject(json) as Dictionary<string, object>;
             if (root == null)
             {
-                return string.Empty;
+                return null;
             }
 
             var choices = GetValue(root, "choices") as object[];
             if (choices == null || choices.Length == 0)
             {
-                return string.Empty;
+                return null;
             }
 
             var choice = choices[0] as Dictionary<string, object>;
             if (choice == null)
             {
-                return string.Empty;
+                return null;
             }
 
-            var delta = GetValue(choice, "delta") as Dictionary<string, object>;
-            if (delta == null)
-            {
-                return string.Empty;
-            }
+            return GetValue(choice, "delta") as Dictionary<string, object>;
+        }
 
-            object content = GetValue(delta, "content");
-            return content == null ? string.Empty : Convert.ToString(content);
+        private static string ReadString(Dictionary<string, object> dict, string key)
+        {
+            object value = GetValue(dict, key);
+            return value == null ? string.Empty : Convert.ToString(value);
         }
 
         private static object GetValue(Dictionary<string, object> dict, string key)
@@ -289,6 +321,45 @@ namespace DeepSeekChatApp
             object value;
             return dict.TryGetValue(key, out value) ? value : null;
         }
+
+        private void AppendReasoning(string text)
+        {
+            _reasoning.Append(text);
+            UpdateThinkingBox();
+        }
+
+        // 单行展示：换行符替换成字面量 \r\n，右对齐以便露出最新内容。
+        private void UpdateThinkingBox()
+        {
+            string raw = _reasoning.ToString();
+
+            // 末尾单独一个 \r 可能是被切开的 \r\n，先藏起来等下一片再处理。
+            if (raw.EndsWith("\r", StringComparison.Ordinal))
+            {
+                raw = raw.Substring(0, raw.Length - 1);
+            }
+
+            string display = raw
+                .Replace("\r\n", "\\r\\n")
+                .Replace("\r", "\\r\\n")
+                .Replace("\n", "\\r\\n");
+
+            if (_thinkingBox.Text == display)
+            {
+                return;
+            }
+
+            // 完整保存文本，把插入点移到末尾并滚动过去，右侧露出最新内容。
+            _thinkingBox.Text = display;
+            _thinkingBox.SelectionStart = _thinkingBox.TextLength;
+            _thinkingBox.SelectionLength = 0;
+            SendMessage(_thinkingBox.Handle, EmScrollCaret, IntPtr.Zero, IntPtr.Zero);
+        }
+
+        private const int EmScrollCaret = 0x00B7;
+
+        [DllImport("user32.dll")]
+        private static extern IntPtr SendMessage(IntPtr hWnd, int msg, IntPtr wParam, IntPtr lParam);
 
         private void AppendContent(string text)
         {
