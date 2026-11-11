@@ -102,7 +102,7 @@ Win98 是纯 32 位系统，所以 `/platform:x86` 不是可选项，是保命�
   "DeepSeekChat.cs"
 ```
 
-编译产物：`dschat.exe`（约 14 KB，比一张 GIF 还小）。
+编译产物：`dschat.exe`（十几 KB，比一张 GIF 还小）。
 
 其中 `/codepage:65001` 是为了让源码里的中文界面文字别变成火星文。
 
