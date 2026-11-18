@@ -114,7 +114,7 @@ Win98 是纯 32 位系统，所以 `/platform:x86` 不是可选项，是保命�
   "DeepSeekChat.cs"
 ```
 
-编译产物：`DeepSeekChat_x86.exe`（约 20 KB，比一张 GIF 还小）。
+编译产物：`DeepSeekChat_x86.exe`（约 30 KB，比一张 GIF 还小）。
 
 - `/codepage:65001` 是为了让源码里的中文界面文字别变成火星文
 - `/win32icon` 决定资源管理器里显示的 exe 图标；窗口图标和新建/删除按钮图标则是以 **base64 字符串写进源码**，运行时解码，所以跑起来不需要任何 `.ico` 文件
